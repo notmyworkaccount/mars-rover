@@ -7,6 +7,11 @@ namespace NASAClient.Models
     {
         [JsonPropertyName("photos")]
         public List<Photo> Photos { get; set; }
+
+        public EarthDateResponse()
+        {
+            Photos = new List<Photo>();
+        }
     }
 
 

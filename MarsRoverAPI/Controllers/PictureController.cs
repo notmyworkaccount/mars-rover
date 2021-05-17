@@ -33,23 +33,44 @@ namespace MarsRoverAPI.Controllers
         public async Task<IActionResult> GetInfo()
         {
             var marsRoverEndpoint = new MarsRoverApi(_httpClientFactory);
-            var tempDateTime = DateTime.Parse("2015-06-03");
-            var results = await marsRoverEndpoint.GetPicturesInformationByEarthDay(tempDateTime);
-            return Ok(Map(results));
+            var dates = GetDatesFromFile();
+            var photoInfo = new EarthDateResponse();
+            foreach (var dateTime in dates)
+            {
+                var results = await marsRoverEndpoint.GetPicturesInformationByEarthDay(dateTime);
+                photoInfo.Photos.AddRange(results.Photos);
+
+            }
+            return Ok(Map(photoInfo));
+        }
+
+        private List<DateTime> GetDatesFromFile()
+        {
+            var dates = new List<DateTime>();
+            var file = System.IO.File.ReadLines("dates.txt");
+            foreach (var date in file)
+            {
+                DateTime tempDate;
+                if (DateTime.TryParse(date, out tempDate))
+                    dates.Add(DateTime.Parse(date));
+            }
+
+            return dates;
+
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetImage(string id, DateTime earthDay)
+        public async Task<IActionResult> GetImage(int id, DateTime earthDay)
         {
             var bytes = await GetImageFromCache(id, earthDay);
             string mimeType = "image/jpeg";
             return new FileContentResult(bytes, mimeType)
             {
-                FileDownloadName = "FileasStream.xlsx"
+                FileDownloadName = $"{id}.jpg"
             };
         }
 
-        private async Task<byte[]> GetImageFromCache(string id, DateTime earthDay)
+        private async Task<byte[]> GetImageFromCache(int id, DateTime earthDay)
         {
             byte[] image;
             if (_memoryCache.TryGetValue(id, out image))
